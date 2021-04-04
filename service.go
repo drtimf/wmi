@@ -420,14 +420,9 @@ func (s *Service) Close() {
 	s.service.Release()
 }
 
-// Query executes the supplied query and maps the results into the destination object(s)
-// The destination must be a pointer to a struct:
-//     var dst Win32_ComputerSystem
-//     err = service.Query("SELECT * FROM Win32_ComputerSystem", &dst)
-// Or a pointer to a slice:
-//     var dst []CIM_DataFile
-//     err = service.Query(`SELECT * FROM CIM_DataFile WHERE Drive = 'C:' AND Path = '\\'`, &dst)
-func (s *Service) Query(query string, dst interface{}) (err error) {
+// processEnumToObject enumerates a WMI enum into a struct or slice
+func processEnumToObject(query string, enum *Enum, dst interface{}) (err error) {
+
 	dt := reflect.TypeOf(dst)
 	if dt.Kind() != reflect.Ptr {
 		return errors.New("desitnation type for mapping a WMI instance to an object must be a pointer to a struct or slice")
@@ -444,12 +439,6 @@ func (s *Service) Query(query string, dst interface{}) (err error) {
 	} else if dt.Kind() != reflect.Struct {
 		return errors.New("desitnation pointer for mapping a WMI instance to an object must be a struct or slice")
 	}
-
-	var enum *Enum
-	if enum, err = s.ExecQuery(query); err != nil {
-		return
-	}
-	defer enum.Close()
 
 	if isSlice {
 		for done := false; !done; {
@@ -475,4 +464,32 @@ func (s *Service) Query(query string, dst interface{}) (err error) {
 	}
 
 	return
+}
+
+// Query executes the supplied query and maps the results into the destination object(s)
+// The destination must be a pointer to a struct:
+//     var dst Win32_ComputerSystem
+//     err = service.Query("SELECT * FROM Win32_ComputerSystem", &dst)
+// Or a pointer to a slice:
+//     var dst []CIM_DataFile
+//     err = service.Query(`SELECT * FROM CIM_DataFile WHERE Drive = 'C:' AND Path = '\\'`, &dst)
+func (s *Service) Query(query string, dst interface{}) (err error) {
+	var enum *Enum
+	if enum, err = s.ExecQuery(query); err != nil {
+		return
+	}
+	defer enum.Close()
+
+	return processEnumToObject(query, enum, dst)
+}
+
+// ClassInstances queries all instances of a class and maps the results into the destination object(s)
+func (s *Service) ClassInstances(className string, dst interface{}) (err error) {
+	var enum *Enum
+	if enum, err = s.CreateInstanceEnum(className); err != nil {
+		return
+	}
+	defer enum.Close()
+
+	return processEnumToObject(className, enum, dst)
 }
