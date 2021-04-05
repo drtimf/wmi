@@ -322,7 +322,7 @@ func (s *Service) CreateInstanceEnum(className string) (e *Enum, err error) {
 		return nil, err
 	}
 
-	return NewEnum(pEnumerator)
+	return newEnum(pEnumerator)
 }
 
 // ExecQuery executes a WMI query and returns a WMI object enumerator
@@ -355,7 +355,7 @@ func (s *Service) ExecQuery(wqlQuery string) (e *Enum, err error) {
 		return nil, err
 	}
 
-	return NewEnum(pEnumerator)
+	return newEnum(pEnumerator)
 }
 
 // ExecMethod executes a method exported by a CIM object. The method call is forwarded to the appropriate provider where it executes.
@@ -388,7 +388,7 @@ func (s *Service) ExecMethod(className string, methodName string, inParams *Inst
 		return nil, ole.NewError(hres)
 	}
 
-	return NewInstance(outParams), nil
+	return newInstance(outParams), nil
 }
 
 // GetObject method retrieves a class or instance
@@ -412,7 +412,7 @@ func (s *Service) GetObject(objectPath string) (instance *Instance, err error) {
 		return nil, ole.NewError(hres)
 	}
 
-	return NewInstance(pObject), nil
+	return newInstance(pObject), nil
 }
 
 // Close a service connection

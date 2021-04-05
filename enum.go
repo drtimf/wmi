@@ -38,7 +38,7 @@ type Enum struct {
 }
 
 // NewEnum wraps a WMI enumerator
-func NewEnum(enumerator *ole.IUnknown) (i *Enum, err error) {
+func newEnum(enumerator *ole.IUnknown) (i *Enum, err error) {
 	return &Enum{
 		enumerator:  enumerator,
 		classVTable: (*IEnumWbemClassObjectVtbl)(unsafe.Pointer(enumerator.RawVTable)),
@@ -69,7 +69,7 @@ func (e *Enum) Next() (instance *Instance, err error) {
 		return nil, nil
 	}
 
-	return NewInstance(pclsObj), nil
+	return newInstance(pclsObj), nil
 }
 
 // Close a WMI enumerator

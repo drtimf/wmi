@@ -1,0 +1,9 @@
+language: go
+go:
+  - 1.15
+  - tip
+os:
+  - windows
+script:
+  - go test -v
+

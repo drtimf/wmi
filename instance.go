@@ -100,13 +100,33 @@ func (p *Property) ValueAsString() (value string) {
 }
 
 // NewInstance wraps an instance of a WMI object
-func NewInstance(classObject *ole.IUnknown) (instance *Instance) {
+func newInstance(classObject *ole.IUnknown) (instance *Instance) {
 	instance = &Instance{
 		classObject: classObject,
 		classVTable: (*IWbemClassObjectVtbl)(unsafe.Pointer(classObject.RawVTable)),
 	}
 
 	return
+}
+
+// SpawnInstance creates a new instance of a class. The current object must be a class definition obtained from Windows Management using
+// GetObject, CreateClassEnum
+func (i *Instance) SpawnInstance() (instance *Instance, err error) {
+	var hres uintptr
+	var inst *ole.IUnknown
+
+	hres, _, _ = syscall.Syscall6(i.classVTable.SpawnInstance, 3, // Call the IWbemClassObject::SpawnInstance method
+		uintptr(unsafe.Pointer(i.classObject)),
+		uintptr(0),                     // long lFlags,
+		uintptr(unsafe.Pointer(&inst)), // IWbemClassObject **ppNewInstance
+		uintptr(0),
+		uintptr(0),
+		uintptr(0))
+	if FAILED(hres) {
+		return nil, ole.NewError(hres)
+	}
+
+	return newInstance(inst), nil
 }
 
 // Get method retrieves the specified property value, if it exists.
@@ -132,6 +152,33 @@ func (i *Instance) Get(name string) (value interface{}, cimType CIMTYPE_ENUMERAT
 
 	defer vtValue.Clear()
 	value = VariantToValue(&vtValue)
+	return
+}
+
+// Put sets a named property to a new value. This method always overwrites the current value with a new one. When
+// IWbemClassObject points to a CIM class definition, Put creates or updates the property value. When IWbemClassObject
+// points to a CIM instance, Put updates a property value only. Put cannot create a property value.
+func (i *Instance) Put(name string, value interface{}) (err error) {
+	var hres uintptr
+	vtValue := NewVariant(value)
+
+	var nameUTF16 *uint16
+	if nameUTF16, err = syscall.UTF16PtrFromString(name); err != nil {
+		return
+	}
+
+	hres, _, _ = syscall.Syscall6(i.classVTable.Put, 5, // Call the IWbemClassObject::Put method
+		uintptr(unsafe.Pointer(i.classObject)),
+		uintptr(unsafe.Pointer(nameUTF16)), // LPCWSTR wszName
+		uintptr(0),                         // long lFlags
+		uintptr(unsafe.Pointer(&vtValue)),  // VARIANT *pVal
+		uintptr(0),                         // CIMTYPE Type
+		uintptr(0))
+	if FAILED(hres) {
+		return ole.NewError(hres)
+	}
+
+	vtValue.Clear()
 	return
 }
 
@@ -330,7 +377,7 @@ func (i *Instance) GetMethod(methodName string) (inSignature *Instance, outSigna
 		return nil, nil, ole.NewError(hres)
 	}
 
-	return NewInstance(inSig), NewInstance(outSig), nil
+	return newInstance(inSig), newInstance(outSig), nil
 }
 
 // GetMethodParameters is a variation on GetMethod which only returns the input parameters so they can be filled out
@@ -355,54 +402,7 @@ func (i *Instance) GetMethodParameters(methodName string) (inParam *Instance, er
 		return nil, ole.NewError(hres)
 	}
 
-	return NewInstance(inSig), nil
-}
-
-// SpawnInstance creates a new instance of a class. The current object must be a class definition obtained from Windows Management using
-// GetObject, CreateClassEnum
-func (i *Instance) SpawnInstance() (instance *Instance, err error) {
-	var hres uintptr
-	var inst *ole.IUnknown
-
-	hres, _, _ = syscall.Syscall6(i.classVTable.SpawnInstance, 3, // Call the IWbemClassObject::SpawnInstance method
-		uintptr(unsafe.Pointer(i.classObject)),
-		uintptr(0),                     // long lFlags,
-		uintptr(unsafe.Pointer(&inst)), // IWbemClassObject **ppNewInstance
-		uintptr(0),
-		uintptr(0),
-		uintptr(0))
-	if FAILED(hres) {
-		return nil, ole.NewError(hres)
-	}
-
-	return NewInstance(inst), nil
-}
-
-// Put sets a named property to a new value. This method always overwrites the current value with a new one. When
-// IWbemClassObject points to a CIM class definition, Put creates or updates the property value. When IWbemClassObject
-// points to a CIM instance, Put updates a property value only. Put cannot create a property value.
-func (i *Instance) Put(name string, value interface{}) (err error) {
-	var hres uintptr
-	vtValue := NewVariant(value)
-
-	var nameUTF16 *uint16
-	if nameUTF16, err = syscall.UTF16PtrFromString(name); err != nil {
-		return
-	}
-
-	hres, _, _ = syscall.Syscall6(i.classVTable.Put, 5, // Call the IWbemClassObject::Put method
-		uintptr(unsafe.Pointer(i.classObject)),
-		uintptr(unsafe.Pointer(nameUTF16)), // LPCWSTR wszName
-		uintptr(0),                         // long lFlags
-		uintptr(unsafe.Pointer(&vtValue)),  // VARIANT *pVal
-		uintptr(0),                         // CIMTYPE Type
-		uintptr(0))
-	if FAILED(hres) {
-		return ole.NewError(hres)
-	}
-
-	vtValue.Clear()
-	return
+	return newInstance(inSig), nil
 }
 
 // Close an instance
