@@ -1,4 +1,5 @@
 // +build windows
+
 package wmi
 
 // MethodExecutor contains the context used for a fluent API to execute a WMI method

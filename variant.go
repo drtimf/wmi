@@ -1,4 +1,5 @@
 // +build windows
+
 // Some of this is derrived from invoke() in github.com/go-ole/go-ole/dispatch_windows.go
 package wmi
 

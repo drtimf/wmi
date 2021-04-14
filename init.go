@@ -1,4 +1,5 @@
 // +build windows
+
 // A wrapper for local and remote Windows WMI at both low level calls to COM, and at a high level Go object mapping.
 // There are a number of WMI library implementations around, but not many of them provide:
 //    - Both local and remote access to the WMI provider
