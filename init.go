@@ -1,4 +1,13 @@
 // +build windows
+// A wrapper for local and remote Windows WMI at both low level calls to COM, and at a high level Go object mapping.
+// There are a number of WMI library implementations around, but not many of them provide:
+//    - Both local and remote access to the WMI provider
+//    - A single session to execute many queries
+//    - Low level access to the WMI API
+//    - High level mapping of WMI objects to Go objects
+//    - WMI method execution
+// This presently only works on Windows. If there is ever a port of the Python Impacket to Go, it would be good to
+// have this work on Linux and MacOS as well.
 package wmi
 
 import (
@@ -11,9 +20,11 @@ import (
 // Namespaces we use for WMI queries
 const (
 	RootCIMV2                   = `ROOT\CIMV2`
-	rootMicrosoftWindowsStorage = `ROOT\Microsoft\Windows\Storage`
-	rootMSCluster               = `ROOT\MSCluster`
-	rootWMI                     = `ROOT\WMI`
+	RootMicrosoftWindowsStorage = `ROOT\Microsoft\Windows\Storage`
+	RootMicrosoftSqlServer      = `ROOT\Microsoft\SqlServer`
+	RootMSCluster               = `ROOT\MSCluster`
+	RootWMI                     = `ROOT\WMI`
+	RootVirtualization          = `ROOT\virtualization`
 )
 
 // HRESULT values

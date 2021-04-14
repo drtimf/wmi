@@ -45,7 +45,7 @@ func newEnum(enumerator *ole.IUnknown) (i *Enum, err error) {
 	}, nil
 }
 
-// Next gets the next WMI instance from a WMI enumerator
+// Next obtains the next WMI instance from a WMI enumerator
 func (e *Enum) Next() (instance *Instance, err error) {
 	var hres uintptr
 	var pclsObj *ole.IUnknown
@@ -77,7 +77,7 @@ func (e *Enum) Close() {
 	e.enumerator.Release()
 }
 
-// NextObject gets the next WMI instance from a WMI enumerator and maps it to a go object
+// NextObject obtains the next WMI instance from a WMI enumerator and maps it to a Go object
 func (e *Enum) NextObject(dst interface{}) (done bool, err error) {
 	dv := reflect.ValueOf(dst)
 	if dv.Kind() != reflect.Ptr || dv.IsNil() {

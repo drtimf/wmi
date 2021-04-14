@@ -109,8 +109,8 @@ func newInstance(classObject *ole.IUnknown) (instance *Instance) {
 	return
 }
 
-// SpawnInstance creates a new instance of a class. The current object must be a class definition obtained from Windows Management using
-// GetObject, CreateClassEnum
+// SpawnInstance creates a new instance of a WMI class. The current object must be a class definition obtained
+// from WMI using GetObject or CreateClassEnum.
 func (i *Instance) SpawnInstance() (instance *Instance, err error) {
 	var hres uintptr
 	var inst *ole.IUnknown
@@ -129,7 +129,7 @@ func (i *Instance) SpawnInstance() (instance *Instance, err error) {
 	return newInstance(inst), nil
 }
 
-// Get method retrieves the specified property value, if it exists.
+// Get obtains a specified property value, if it exists.
 func (i *Instance) Get(name string) (value interface{}, cimType CIMTYPE_ENUMERATION, flavor WBEM_FLAVOR_TYPE, err error) {
 	var vtValue ole.VARIANT
 
@@ -155,9 +155,9 @@ func (i *Instance) Get(name string) (value interface{}, cimType CIMTYPE_ENUMERAT
 	return
 }
 
-// Put sets a named property to a new value. This method always overwrites the current value with a new one. When
-// IWbemClassObject points to a CIM class definition, Put creates or updates the property value. When IWbemClassObject
-// points to a CIM instance, Put updates a property value only. Put cannot create a property value.
+// Put sets a named property to a new value. This always overwrites the current value with a new one. When
+// the instance is a CIM class definition, Put creates or updates the property value. When the instance
+// is a CIM instance, Put updates a property value only. Put cannot create a property value.
 func (i *Instance) Put(name string, value interface{}) (err error) {
 	var hres uintptr
 	vtValue := NewVariant(value)
@@ -182,7 +182,7 @@ func (i *Instance) Put(name string, value interface{}) (err error) {
 	return
 }
 
-// GetNames method retrieves the names of the properties in the object
+// GetNames retrieves the names of the properties in the WMI instance
 func (i *Instance) GetNames() (names []string, err error) {
 	var hres uintptr
 	var classPropertyNames *ole.SafeArray
@@ -206,8 +206,8 @@ func (i *Instance) GetNames() (names []string, err error) {
 	return
 }
 
-// BeginEnumeration method resets an enumeration of object properties back to the beginning of the enumeration.
-// The caller must call this method prior to the first call to Next to enumerate all of the properties on an object.
+// BeginEnumeration resets an enumeration of instance properties back to the beginning of the enumeration.
+// This must be called prior to the first call to Next to enumerate all of the properties on an object.
 func (i *Instance) BeginEnumeration() (err error) {
 	var hres uintptr
 
@@ -257,7 +257,7 @@ func (i *Instance) NextAsVariant() (done bool, name string, value *ole.VARIANT, 
 	return
 }
 
-// Next retrieves the next property in an enumeration that started with BeginEnumeration. This should be called repeatedly
+// Next retrieves the next property in an enumeration as a Go value that started with BeginEnumeration. This should be called repeatedly
 // to enumerate all the properties until done returns true. If the enumeration is to be terminated early, then EndEnumeration should be called.
 func (i *Instance) Next() (done bool, name string, value interface{}, cimType CIMTYPE_ENUMERATION, flavor WBEM_FLAVOR_TYPE, err error) {
 	var vtValue *ole.VARIANT
@@ -272,7 +272,7 @@ func (i *Instance) Next() (done bool, name string, value interface{}, cimType CI
 }
 
 // EndEnumeration terminates an enumeration sequence started with BeginEnumeration. This call is not required,
-// but it is recommended to developers because it releases resources associated with the enumeration. However, the
+// but it is recommended because it releases resources associated with the enumeration. However, the
 // resources are deallocated automatically when the next enumeration is started or the object is released.
 func (i *Instance) EndEnumeration() (err error) {
 	var hres uintptr
@@ -291,7 +291,7 @@ func (i *Instance) EndEnumeration() (err error) {
 	return
 }
 
-// BeginMethodEnumeration begins an enumeration of the methods available for the object.
+// BeginMethodEnumeration begins an enumeration of the methods available for the instance.
 func (i *Instance) BeginMethodEnumeration() (err error) {
 	var hres uintptr
 
@@ -309,7 +309,7 @@ func (i *Instance) BeginMethodEnumeration() (err error) {
 	return
 }
 
-// NextMethod is used to retrieve the next method in a method enumeration sequence that starts with a call to BeginMethodEnumeration.
+// NextMethod retrieves the next method in a method enumeration sequence that starts with a call to BeginMethodEnumeration.
 func (i *Instance) NextMethod() (done bool, name string, err error) {
 	var hres uintptr
 	var nameUTF16 *uint16
@@ -338,7 +338,7 @@ func (i *Instance) NextMethod() (done bool, name string, err error) {
 	return
 }
 
-// EndMethodEnumeration is used to terminate a method enumeration sequence started with BeginMethodEnumeration.
+// EndMethodEnumeration terminates a method enumeration sequence started with BeginMethodEnumeration.
 func (i *Instance) EndMethodEnumeration() (err error) {
 	var hres uintptr
 	hres, _, _ = syscall.Syscall6(i.classVTable.EndMethodEnumeration, 1, // Call the IWbemClassObject::EndMethodEnumeration method
@@ -355,8 +355,8 @@ func (i *Instance) EndMethodEnumeration() (err error) {
 	return
 }
 
-// GetMethod returns information about the requested method. This call is only supported if the current object is a
-// CIM class definition. Method information is not available from IWbemClassObject pointers which point to CIM instances.
+// GetMethod obtains information about the requested method. This is only supported if the current instance is a
+// CIM class definition. Method information is not available from instances which are CIM instances.
 func (i *Instance) GetMethod(methodName string) (inSignature *Instance, outSignature *Instance, err error) {
 	var hres uintptr
 	var inSig, outSig *ole.IUnknown
@@ -380,8 +380,8 @@ func (i *Instance) GetMethod(methodName string) (inSignature *Instance, outSigna
 	return newInstance(inSig), newInstance(outSig), nil
 }
 
-// GetMethodParameters is a variation on GetMethod which only returns the input parameters so they can be filled out
-// for calling the method.
+// GetMethodParameters obtains the input parameters of a method so they can be filled out for calling the method.
+// This is a variation of GetMethod which only returns in input parameters.
 func (i *Instance) GetMethodParameters(methodName string) (inParam *Instance, err error) {
 	var hres uintptr
 	var inSig *ole.IUnknown
@@ -410,8 +410,8 @@ func (i *Instance) Close() {
 	i.classObject.Release()
 }
 
-// GetPropertyValue gets the string value of a property
-func (i *Instance) GetPropertyValue(name string) (value string, err error) {
+// GetPropertyAsString obtains a specificed property value as a string
+func (i *Instance) GetPropertyAsString(name string) (value string, err error) {
 	if v, _, _, err := i.Get(name); err != nil {
 		return "", err
 	} else {
@@ -419,7 +419,7 @@ func (i *Instance) GetPropertyValue(name string) (value string, err error) {
 	}
 }
 
-// GetProperties returns all the properties within a WMI object
+// GetProperties returns all the properties and their values for the WMI instance
 func (i *Instance) GetProperties() (properties []Property, err error) {
 	if err = i.BeginEnumeration(); err != nil {
 		return
@@ -447,7 +447,7 @@ func (i *Instance) GetProperties() (properties []Property, err error) {
 	return
 }
 
-// GetMethods returns all the methods for a WMI object
+// GetMethods obtain all the method names for the WMI instance
 func (i *Instance) GetMethods() (methodNames []string, err error) {
 	if err = i.BeginMethodEnumeration(); err != nil {
 		return
@@ -469,7 +469,7 @@ func (i *Instance) GetMethods() (methodNames []string, err error) {
 	return
 }
 
-// GetClassName returns the class name of a WMI object
+// GetClassName obtains the class name of the WMI instance
 func (i *Instance) GetClassName() (className string, err error) {
-	return i.GetPropertyValue(`__CLASS`)
+	return i.GetPropertyAsString(`__CLASS`)
 }

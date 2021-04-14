@@ -253,18 +253,18 @@ func newService(server string, namespace string, username string, password strin
 	return
 }
 
-// NewLocalService connects to a local WMI service
+// NewLocalService opens a connection to a local WMI service
 func NewLocalService(namespace string) (s *Service, err error) {
 	return newService(".", namespace, "", "")
 }
 
-// NewRemoteService connects to a remote WMI service
+// NewRemoteService a connection to a remote WMI service with a username and a password
 func NewRemoteService(server string, namespace string, username string, password string) (s *Service, err error) {
 	return newService(server, namespace, username, password)
 }
 
-// OpenNamespace provides the caller with a new service that has the specified child namespace as its operating context.
-// All operations through the new pointer, such as class or instance creation, only affect that namespace. The namespace
+// OpenNamespace creates a new service that has the specified child namespace as its operating context.
+// All operations through the new service, such as class or instance creation, only affect that namespace. The namespace
 // must be a child namespace of the current object through which this method is called.
 func (s *Service) OpenNamespace(namespace string) (newService *Service, err error) {
 	var hres uintptr
@@ -297,7 +297,7 @@ func (s *Service) OpenNamespace(namespace string) (newService *Service, err erro
 	return
 }
 
-// CreateInstanceEnum method creates an enumerator that returns the instances of a specified class according to user-specified selection criteria.
+// CreateInstanceEnum obtains a WMI enumerator that returns the instances of a specified class.
 func (s *Service) CreateInstanceEnum(className string) (e *Enum, err error) {
 	var hres uintptr
 	var pEnumerator *ole.IUnknown
@@ -325,7 +325,7 @@ func (s *Service) CreateInstanceEnum(className string) (e *Enum, err error) {
 	return newEnum(pEnumerator)
 }
 
-// ExecQuery executes a WMI query and returns a WMI object enumerator
+// ExecQuery executes a WMI Query Language (WQL) query and returns a WMI enumerator for the queried class instances
 func (s *Service) ExecQuery(wqlQuery string) (e *Enum, err error) {
 	var hres uintptr
 	var pEnumerator *ole.IUnknown
@@ -391,7 +391,7 @@ func (s *Service) ExecMethod(className string, methodName string, inParams *Inst
 	return newInstance(outParams), nil
 }
 
-// GetObject method retrieves a class or instance
+// GetObject obtains a single WMI class or instance given its path
 func (s *Service) GetObject(objectPath string) (instance *Instance, err error) {
 	var hres uintptr
 	var pObject *ole.IUnknown
@@ -466,7 +466,7 @@ func processEnumToObject(query string, enum *Enum, dst interface{}) (err error) 
 	return
 }
 
-// Query executes the supplied query and maps the results into the destination object(s)
+// Query executes a WMI Query Language (WQL) query and maps the results to a structure or slice of structures
 // The destination must be a pointer to a struct:
 //     var dst Win32_ComputerSystem
 //     err = service.Query("SELECT * FROM Win32_ComputerSystem", &dst)
@@ -483,7 +483,7 @@ func (s *Service) Query(query string, dst interface{}) (err error) {
 	return processEnumToObject(query, enum, dst)
 }
 
-// ClassInstances queries all instances of a class and maps the results into the destination object(s)
+// ClassInstances enumerates a WMI class of a given name and map the objects to a structure or slice of structures
 func (s *Service) ClassInstances(className string, dst interface{}) (err error) {
 	var enum *Enum
 	if enum, err = s.CreateInstanceEnum(className); err != nil {
